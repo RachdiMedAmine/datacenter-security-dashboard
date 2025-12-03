@@ -36,6 +36,13 @@ export interface MQTTMessage {
   location?: string;
   timestamp?: number;
   message?: string;
+  door?: "OPEN" | "CLOSED";
+  manual?: boolean;
+}
+
+export interface DoorStatus {
+  state: "OPEN" | "CLOSED" | "UNKNOWN";
+  isManual: boolean;
 }
 
 export type MQTTMessageHandler = (topic: string, data: MQTTMessage) => void;

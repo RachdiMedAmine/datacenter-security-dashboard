@@ -17,7 +17,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
+          "icon": "./assets/images/icon.png",
           "color": "#00f5ff"
         }
       ]
@@ -36,6 +36,9 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "887a2d5f-a982-4b10-8249-c13b67e46e62"
       }
     }
   }

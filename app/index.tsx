@@ -2,63 +2,61 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import ConnectionStatus from "../src/components/connectionStatus";
+import DoorControl from "../src/components/doorControl";
 import SensorPanel from "../src/components/sensorPanel";
 import {
   connectMQTT,
   disconnectMQTT,
   isConnected,
+  openDoor,
 } from "../src/services/mqttService";
 import {
   sendMotionAlert,
   setupNotifications,
 } from "../src/services/notificationService";
 import { colors } from "../src/theme/colours";
-import { MQTTMessage, SensorData } from "../src/types";
+import { DoorStatus, MQTTMessage, SensorData } from "../src/types";
 
 export default function Dashboard() {
   const [connected, setConnected] = useState<boolean>(false);
+  const [doorStatus, setDoorStatus] = useState<DoorStatus>({
+    state: "UNKNOWN",
+    isManual: false,
+  });
 
-  // Mock data for temperature, humidity, and gas
   const [sensors, setSensors] = useState<SensorData>({
     temperature: { value: 22, lastUpdate: Date.now() },
     humidity: { value: 45, lastUpdate: Date.now() },
-    motion: { value: false, lastUpdate: null }, // Real data from ESP32
+    motion: { value: false, lastUpdate: null },
     gas: { value: 150, lastUpdate: Date.now() },
   });
 
   useEffect(() => {
-    // Setup notifications
     setupNotifications();
 
-    // Connect to MQTT broker
     const client = connectMQTT("10.75.158.160", 9001, handleMessage);
 
-    // Check connection status periodically
     const connectionCheck = setInterval(() => {
       setConnected(isConnected());
     }, 1000);
 
-    // Update mock data periodically to simulate live readings
     const mockDataInterval = setInterval(() => {
       setSensors((prev) => ({
         ...prev,
-        // Temperature varies between 20-24°C
         temperature: {
           value: parseFloat((20 + Math.random() * 4).toFixed(1)),
           lastUpdate: Date.now(),
         },
-        // Humidity varies between 40-50%
         humidity: {
           value: Math.floor(40 + Math.random() * 10),
           lastUpdate: Date.now(),
         },
-        // Gas varies between 100-300 ppm
         gas: {
           value: Math.floor(100 + Math.random() * 200),
           lastUpdate: Date.now(),
         },
       }));
-    }, 3000); // Update every 3 seconds
+    }, 3000);
 
     return () => {
       disconnectMQTT();
@@ -70,7 +68,6 @@ export default function Dashboard() {
   const handleMessage = (topic: string, data: MQTTMessage): void => {
     console.log("Received:", topic, data);
 
-    // Only handle motion sensor data from ESP32
     if (topic === "datacenter/motion") {
       const motionDetected = data.alert === "MOTION_DETECTED";
 
@@ -82,11 +79,24 @@ export default function Dashboard() {
         },
       }));
 
-      // Send notification when motion is detected
       if (motionDetected) {
         sendMotionAlert();
       }
+    } else if (topic === "datacenter/status") {
+      // Update door status from ESP32
+      if (data.door) {
+        setDoorStatus({
+          state: data.door as "OPEN" | "CLOSED",
+          isManual: data.manual || false,
+        });
+      }
     }
+  };
+
+  const handleOpenDoor = async (): Promise<void> => {
+    openDoor();
+    // Optimistically update UI
+    setDoorStatus((prev) => ({ ...prev, state: "OPEN", isManual: true }));
   };
 
   return (
@@ -107,6 +117,13 @@ export default function Dashboard() {
             </View>
             <ConnectionStatus connected={connected} />
           </View>
+
+          {/* Door Control */}
+          <DoorControl
+            doorStatus={doorStatus.state}
+            isManual={doorStatus.isManual}
+            onOpenDoor={handleOpenDoor}
+          />
 
           {/* Sensor Grid */}
           <View style={styles.grid}>
@@ -137,7 +154,7 @@ export default function Dashboard() {
             <View style={styles.infoRow}>
               <View style={styles.infoDot} />
               <Text style={styles.infoText}>
-                Real-time motion monitoring active
+                Real-time monitoring & door control
               </Text>
             </View>
             <Text
@@ -148,7 +165,7 @@ export default function Dashboard() {
             >
               Temperature, Humidity, Gas: Demo Mode
             </Text>
-            <Text style={styles.versionText}>v1.0.0</Text>
+            <Text style={styles.versionText}>v1.1.0</Text>
           </View>
         </ScrollView>
       </LinearGradient>
@@ -171,7 +188,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: 24,
     marginTop: 10,
   },
   title: {

@@ -18,17 +18,13 @@ export const connectMQTT = (
   console.log(`Connecting to MQTT broker: ${brokerUrl}:${port}`);
 
   try {
-    // Create a client instance
-    // Note: Paho requires WebSocket connection, so you need to configure your MQTT broker
-    // to support WebSocket on a different port (usually 9001)
-    const wsPort = 9001; // WebSocket port - configure this on your broker
+    const wsPort = 9001;
     const clientId = `datacenter_mobile_${Math.random()
       .toString(16)
       .substr(2, 8)}`;
 
     client = new Paho.Client(brokerUrl, wsPort, "/mqtt", clientId);
 
-    // Set callback handlers
     client.onConnectionLost = (responseObject: any) => {
       if (responseObject.errorCode !== 0) {
         console.log("⚠️ Connection lost:", responseObject.errorMessage);
@@ -45,14 +41,14 @@ export const connectMQTT = (
       }
     };
 
-    // Connect the client
     client.connect({
       onSuccess: () => {
         console.log("✓ Connected to MQTT broker!");
 
         // Subscribe to topics
         client.subscribe("datacenter/motion", { qos: 0 });
-        console.log("✓ Subscribed to datacenter/motion");
+        client.subscribe("datacenter/status", { qos: 0 });
+        console.log("✓ Subscribed to datacenter topics");
       },
       onFailure: (error: any) => {
         console.error("❌ Connection failed:", error.errorMessage);
@@ -66,6 +62,22 @@ export const connectMQTT = (
   }
 
   return client;
+};
+
+export const publishCommand = (command: string): void => {
+  if (client && client.isConnected()) {
+    const message = new Paho.Message(command);
+    message.destinationName = "datacenter/control";
+    message.qos = 0;
+    client.send(message);
+    console.log(`✓ Command sent: ${command}`);
+  } else {
+    console.error("❌ Cannot send command - MQTT not connected");
+  }
+};
+
+export const openDoor = (): void => {
+  publishCommand("OPEN_DOOR");
 };
 
 export const disconnectMQTT = (): void => {

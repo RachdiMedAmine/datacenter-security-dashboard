@@ -30,8 +30,8 @@ export default function Dashboard() {
     // Setup notifications
     setupNotifications();
 
-    // Connect to MQTT broker - UPDATE THIS WITH YOUR PC'S IP
-    const client = connectMQTT("10.75.158.160", 1883, handleMessage);
+    // Connect to MQTT broker
+    const client = connectMQTT("10.75.158.160", 9001, handleMessage);
 
     // Check connection status periodically
     const connectionCheck = setInterval(() => {

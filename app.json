@@ -4,11 +4,11 @@
     "slug": "datacenter-security",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "datacenter",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/images/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0a0e27"
     },
@@ -24,7 +24,7 @@
     ],
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#0a0e27"
       },
       "package": "com.datacenter.security",

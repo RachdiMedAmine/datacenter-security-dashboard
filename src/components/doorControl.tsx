@@ -1,3 +1,4 @@
+// doorControl.tsx
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
@@ -15,12 +16,16 @@ interface DoorControlProps {
   doorStatus: "OPEN" | "CLOSED" | "UNKNOWN";
   isManual: boolean;
   onOpenDoor: () => Promise<void>;
+  onCloseDoor: () => Promise<void>;
+  onAutoMode: () => Promise<void>;
 }
 
 export default function DoorControl({
   doorStatus,
   isManual,
   onOpenDoor,
+  onCloseDoor,
+  onAutoMode,
 }: DoorControlProps) {
   const [loading, setLoading] = useState(false);
 
@@ -33,6 +38,36 @@ export default function DoorControl({
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error("Door control error:", error);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseDoor = async () => {
+    setLoading(true);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      await onCloseDoor();
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.error("Door control error:", error);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAutoMode = async () => {
+    setLoading(true);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    try {
+      await onAutoMode();
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.error("Auto mode error:", error);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setLoading(false);
@@ -83,8 +118,9 @@ export default function DoorControl({
         </View>
       </View>
 
-      {/* Control Button - Only OPEN */}
+      {/* Control Buttons */}
       <View style={styles.buttonContainer}>
+        {/* Open Door Button */}
         <TouchableOpacity
           style={[
             styles.button,
@@ -108,7 +144,7 @@ export default function DoorControl({
               <>
                 <Ionicons
                   name="lock-open-outline"
-                  size={28}
+                  size={24}
                   color={
                     doorStatus === "OPEN"
                       ? colors.textSecondary
@@ -132,12 +168,95 @@ export default function DoorControl({
             )}
           </LinearGradient>
         </TouchableOpacity>
+
+        {/* Close Door Button */}
+        <TouchableOpacity
+          style={[
+            styles.button,
+            doorStatus === "CLOSED" && styles.buttonDisabled,
+          ]}
+          onPress={handleCloseDoor}
+          disabled={loading || doorStatus === "CLOSED"}
+          activeOpacity={0.7}
+        >
+          <LinearGradient
+            colors={
+              doorStatus === "CLOSED"
+                ? ["rgba(239, 68, 68, 0.2)", "rgba(239, 68, 68, 0.1)"]
+                : ["rgba(239, 68, 68, 0.4)", "rgba(239, 68, 68, 0.3)"]
+            }
+            style={styles.buttonGradient}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.danger} />
+            ) : (
+              <>
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={24}
+                  color={
+                    doorStatus === "CLOSED"
+                      ? colors.textSecondary
+                      : colors.danger
+                  }
+                />
+                <Text
+                  style={[
+                    styles.buttonText,
+                    {
+                      color:
+                        doorStatus === "CLOSED"
+                          ? colors.textSecondary
+                          : colors.danger,
+                    },
+                  ]}
+                >
+                  CLOSE DOOR
+                </Text>
+              </>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Auto Mode Button - Only show when in manual mode */}
+        {isManual && (
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleAutoMode}
+            disabled={loading}
+            activeOpacity={0.7}
+          >
+            <LinearGradient
+              colors={["rgba(139, 92, 246, 0.4)", "rgba(139, 92, 246, 0.3)"]}
+              style={styles.buttonGradient}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.secondary} />
+              ) : (
+                <>
+                  <Ionicons
+                    name="refresh-outline"
+                    size={24}
+                    color={colors.secondary}
+                  />
+                  <Text
+                    style={[styles.buttonText, { color: colors.secondary }]}
+                  >
+                    RETURN TO AUTO
+                  </Text>
+                </>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Info Text */}
       <Text style={styles.infoText}>
-        {doorStatus === "CLOSED"
-          ? "Door locked - Tap to grant access"
+        {isManual
+          ? "Manual mode active - Use controls above or return to automatic mode"
+          : doorStatus === "CLOSED"
+          ? "Door locked - Will auto-open after 5 minutes"
           : "Door open - Will auto-lock on motion detection"}
       </Text>
 
@@ -209,6 +328,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginBottom: 16,
+    gap: 12,
   },
   button: {
     borderRadius: 16,
@@ -218,8 +338,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonGradient: {
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 20,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
@@ -228,7 +349,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.1)",
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     letterSpacing: 1.5,
   },

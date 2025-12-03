@@ -1,3 +1,4 @@
+// mqttService.ts
 import { MQTTMessageHandler } from "../types";
 
 // @ts-ignore
@@ -78,6 +79,14 @@ export const publishCommand = (command: string): void => {
 
 export const openDoor = (): void => {
   publishCommand("OPEN_DOOR");
+};
+
+export const closeDoor = (): void => {
+  publishCommand("CLOSE_DOOR");
+};
+
+export const setAutoMode = (): void => {
+  publishCommand("AUTO_MODE");
 };
 
 export const disconnectMQTT = (): void => {

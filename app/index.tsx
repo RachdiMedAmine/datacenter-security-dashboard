@@ -1,3 +1,4 @@
+// index.tsx
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -5,10 +6,12 @@ import ConnectionStatus from "../src/components/connectionStatus";
 import DoorControl from "../src/components/doorControl";
 import SensorPanel from "../src/components/sensorPanel";
 import {
+  closeDoor,
   connectMQTT,
   disconnectMQTT,
   isConnected,
   openDoor,
+  setAutoMode,
 } from "../src/services/mqttService";
 import {
   sendMotionAlert,
@@ -99,6 +102,18 @@ export default function Dashboard() {
     setDoorStatus((prev) => ({ ...prev, state: "OPEN", isManual: true }));
   };
 
+  const handleCloseDoor = async (): Promise<void> => {
+    closeDoor();
+    // Optimistically update UI
+    setDoorStatus((prev) => ({ ...prev, state: "CLOSED", isManual: true }));
+  };
+
+  const handleAutoMode = async (): Promise<void> => {
+    setAutoMode();
+    // Return to automatic mode
+    setDoorStatus((prev) => ({ ...prev, isManual: false }));
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
@@ -123,6 +138,8 @@ export default function Dashboard() {
             doorStatus={doorStatus.state}
             isManual={doorStatus.isManual}
             onOpenDoor={handleOpenDoor}
+            onCloseDoor={handleCloseDoor}
+            onAutoMode={handleAutoMode}
           />
 
           {/* Sensor Grid */}
@@ -165,7 +182,7 @@ export default function Dashboard() {
             >
               Temperature, Humidity, Gas: Demo Mode
             </Text>
-            <Text style={styles.versionText}>v1.1.0</Text>
+            <Text style={styles.versionText}>v1.2.0</Text>
           </View>
         </ScrollView>
       </LinearGradient>

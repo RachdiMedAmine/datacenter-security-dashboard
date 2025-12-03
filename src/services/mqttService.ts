@@ -1,78 +1,68 @@
-import mqtt, { MqttClient } from "mqtt";
 import { MQTTMessageHandler } from "../types";
 
-let client: MqttClient | null = null;
+// @ts-ignore - react-native-mqtt doesn't have types
+import MQTT from "react-native-mqtt";
+
+let client: any = null;
 
 export const connectMQTT = (
   brokerUrl: string,
   port: number,
   onMessage: MQTTMessageHandler
-): MqttClient => {
-  // Don't create a new connection if already connected
+): any => {
   if (client && client.connected) {
     console.log("Already connected to MQTT broker");
     return client;
   }
 
-  const url = `mqtt://${brokerUrl}:${port}`;
+  console.log(`Connecting to MQTT broker: ${brokerUrl}:${port}`);
 
-  console.log("Connecting to MQTT broker:", url);
+  MQTT.createClient({
+    uri: `mqtt://${brokerUrl}:${port}`,
+    clientId: `datacenter_mobile_${Math.random().toString(16).substr(2, 8)}`,
+  })
+    .then((mqttClient: any) => {
+      client = mqttClient;
 
-  client = mqtt.connect(url, {
-    clientId: `ESP32_Datacentersecurity`,
-    keepalive: 60,
-    clean: true,
-    reconnectPeriod: 5000, // Changed from 1000 to 5000ms
-    connectTimeout: 30000, // 30 second timeout
-  });
+      client.on("closed", () => {
+        console.log("⚠️ MQTT connection closed");
+      });
 
-  client.on("connect", () => {
-    console.log("✓ Connected to MQTT broker");
+      client.on("error", (msg: string) => {
+        console.error("❌ MQTT Error:", msg);
+      });
 
-    // Subscribe ONLY to motion sensor topic
-    client?.subscribe("datacenter/motion", (err) => {
-      if (!err) {
-        console.log("✓ Subscribed to motion sensor");
-      } else {
-        console.error("Failed to subscribe to motion:", err);
-      }
+      client.on("message", (msg: any) => {
+        try {
+          const data = JSON.parse(msg.data);
+          console.log("✓ Message received:", msg.topic, data);
+          onMessage(msg.topic, data);
+        } catch (error) {
+          console.error("❌ Error parsing message:", error);
+        }
+      });
+
+      client.on("connect", () => {
+        console.log("✓ Connected to MQTT broker!");
+
+        client.subscribe("datacenter/motion", 0);
+        console.log("✓ Subscribed to datacenter/motion");
+      });
+
+      client.connect();
+    })
+    .catch((err: any) => {
+      console.error("❌ Failed to create MQTT client:", err);
     });
-  });
-
-  client.on("error", (error) => {
-    console.error("MQTT Error:", error.message);
-  });
-
-  client.on("message", (topic: string, message: Buffer) => {
-    try {
-      const data = JSON.parse(message.toString());
-      console.log("Message received:", topic, data);
-      onMessage(topic, data);
-    } catch (error) {
-      console.error("Error parsing MQTT message:", error);
-    }
-  });
-
-  client.on("offline", () => {
-    console.log("MQTT client offline");
-  });
-
-  client.on("reconnect", () => {
-    console.log("Reconnecting to MQTT broker...");
-  });
-
-  client.on("close", () => {
-    console.log("MQTT connection closed");
-  });
 
   return client;
 };
 
 export const disconnectMQTT = (): void => {
   if (client) {
-    client.end(true); // Force close
+    client.disconnect();
     client = null;
-    console.log("Disconnected from MQTT broker");
+    console.log("✓ Disconnected from MQTT broker");
   }
 };
 

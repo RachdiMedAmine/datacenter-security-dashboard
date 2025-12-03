@@ -1,48 +1,42 @@
 {
   "expo": {
-    "name": "datacenter-security",
+    "name": "Datacenter Security",
     "slug": "datacenter-security",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "datacentersecurity",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "datacenter",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0e27"
     },
     "plugins": [
       "expo-router",
       [
-        "expo-splash-screen",
+        "expo-notifications",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "icon": "./assets/notification-icon.png",
+          "color": "#00f5ff"
         }
       ]
     ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0e27"
+      },
+      "package": "com.datacenter.security",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.VIBRATE"
+      ]
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      }
     }
   }
 }
